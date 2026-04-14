@@ -40,10 +40,10 @@ app.add_middleware(
 # Configuração do Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    print("❌ ERRO: GEMINI_API_KEY não encontrada no arquivo .env")
+    print("ERRO: GEMINI_API_KEY não encontrada no arquivo .env")
 else:
     # Mostrar apenas os 4 primeiros caracteres para debug seguro
-    print(f"✅ API Key carregada: {GEMINI_API_KEY[:4]}****")
+    print(f"API Key carregada: {GEMINI_API_KEY[:4]}****")
     genai.configure(api_key=GEMINI_API_KEY)
 
 # Inicializar YOLOv8

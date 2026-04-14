@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 
 // Função debounce para limitar a frequência de chamadas
 const debounce = (func: (...args: any[]) => void, delay: number) => {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return (...args: any[]) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), delay);
@@ -15,7 +15,7 @@ function App() {
   const [description, setDescription] = useState<string>('Toque na tela para descrever o ambiente.')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isAutoMode, setIsAutoMode] = useState(false)
-  const autoModeInterval = useRef<NodeJS.Timeout | null>(null)
+  const autoModeInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const startCamera = useCallback(async () => {
     try {
@@ -49,43 +49,7 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.lang = 'pt-BR';
-      recognition.interimResults = false;
-
-      recognition.onresult = (event: any) => {
-        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
-        console.log('Comando ouvido:', command);
-        
-        if (command.includes('descreva') || command.includes('o que é isso') || command.includes('onde estou')) {
-          debouncedCaptureFrame();
-        } else if (command.includes('ligar automático') || command.includes('ativar automático')) {
-          if (!isAutoMode) toggleAutoMode();
-        } else if (command.includes('desligar automático') || command.includes('parar automático')) {
-          if (isAutoMode) toggleAutoMode();
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        console.error('Erro no reconhecimento de voz:', event.error);
-      };
-
-      if (isCameraActive) {
-        recognition.start();
-      }
-
-      return () => recognition.stop();
-    }
-  }, [isCameraActive, isAutoMode]);
-
-  // Debounce para a função captureFrame
-  const debouncedCaptureFrame = useCallback(debounce(captureFrame, 500), [captureFrame]);
-
-  const captureFrame = async () => {
+  const captureFrame = useCallback(async () => {
     if (!videoRef.current || isAnalyzing) return
     
     setIsAnalyzing(true)
@@ -127,7 +91,43 @@ function App() {
         setIsAnalyzing(false)
       }
     }
-  }
+  }, [isAnalyzing, isAutoMode])
+
+  // Debounce para a função captureFrame
+  const debouncedCaptureFrame = useCallback(debounce(captureFrame, 500), [captureFrame])
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event: any) => {
+        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        console.log('Comando ouvido:', command);
+        
+        if (command.includes('descreva') || command.includes('o que é isso') || command.includes('onde estou')) {
+          debouncedCaptureFrame();
+        } else if (command.includes('ligar automático') || command.includes('ativar automático')) {
+          if (!isAutoMode) toggleAutoMode();
+        } else if (command.includes('desligar automático') || command.includes('parar automático')) {
+          if (isAutoMode) toggleAutoMode();
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Erro no reconhecimento de voz:', event.error);
+      };
+
+      if (isCameraActive) {
+        recognition.start();
+      }
+
+      return () => recognition.stop();
+    }
+  }, [isCameraActive, isAutoMode, debouncedCaptureFrame]);
 
   const toggleAutoMode = () => {
     if (isAutoMode) {

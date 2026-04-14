@@ -23,6 +23,10 @@ const openai = AI_PROVIDER === 'openai' ? new OpenAI({
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+app.get('/', (req, res) => {
+  res.json({ message: 'VisionGuide Backend API', status: 'running' });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
