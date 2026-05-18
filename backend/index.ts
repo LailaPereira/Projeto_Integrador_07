@@ -5,6 +5,7 @@ import http from 'http';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from 'openai';
 import { WebSocketServer, WebSocket } from 'ws';
+from fastapi import FastAPI, HTTPException, status;
 
 dotenv.config();
 

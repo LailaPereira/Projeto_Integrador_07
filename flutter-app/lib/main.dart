@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'theme/tema_app.dart';
+import 'services/gerenciador_autenticacao.dart';
+import 'core/rotas.dart';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
+import 'package:flutter_animate/flutter_animate.dart';
 
 void main() {
-  runApp(const VisionGuideApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GerenciadorAutenticacao()),
+      ],
+      child: const VisionGuideApp(),
+    ),
+  );
 }
 
 class VisionGuideApp extends StatelessWidget {
@@ -28,7 +40,7 @@ class VisionGuideApp extends StatelessWidget {
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: const Color(0xF208111F),
           indicatorColor: const Color(0x2663A7FF),
-          labelTextStyle: MaterialStateProperty.all(
+          labelTextStyle: WidgetStateProperty.all(
             const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ),
