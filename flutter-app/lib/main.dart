@@ -84,7 +84,9 @@ class VisionGuideHome extends StatefulWidget {
 }
 
 class _VisionGuideHomeState extends State<VisionGuideHome> {
-  int _index = 0;
+  int _index = 3;
+  bool _sendOnStopTalking = true;
+  double _voiceSpeed = 0.5;
   final _chatController = TextEditingController();
   final _scrollController = ScrollController();
   final _picker = ImagePicker();
@@ -205,6 +207,20 @@ class _VisionGuideHomeState extends State<VisionGuideHome> {
     }
   }
 
+  void _onTestVoice() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Teste de voz acionado')),
+    );
+  }
+
+  void _onLogout() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Saiu da conta')),
+    );
+  }
+
   void _openCamera() {
     setState(() => _index = 1);
   }
@@ -222,17 +238,21 @@ class _VisionGuideHomeState extends State<VisionGuideHome> {
         onCaptureAndSend: _captureAndSendToChat,
       ),
       _ChatTab(
-        key: const ValueKey('chat'),
+        key: const ValueKey('assistant'),
         messages: _messages,
         controller: _chatController,
         scrollController: _scrollController,
         onSend: _sendChat,
       ),
-      _GalleryTab(
-        key: const ValueKey('gallery'),
-        items: _galleryItems,
+      _SettingsTab(
+        key: const ValueKey('settings'),
+        sendOnStopTalking: _sendOnStopTalking,
+        onSendOnStopTalkingChanged: (value) => setState(() => _sendOnStopTalking = value),
+        voiceSpeed: _voiceSpeed,
+        onVoiceSpeedChanged: (value) => setState(() => _voiceSpeed = value),
+        onTestVoice: _onTestVoice,
+        onLogout: _onLogout,
       ),
-      const _ProfileTab(key: ValueKey('profile')),
     ];
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -252,16 +272,14 @@ class _VisionGuideHomeState extends State<VisionGuideHome> {
               children: [
                 _AppHeader(
                   title: 'VisionGuide',
-                  subtitle: 'Mobile preview',
-                  chip: _index == 1
-                      ? 'Câmera'
-                      : _index == 2
-                          ? 'IA'
-                          : _index == 3
-                              ? 'Galeria'
-                              : _index == 4
-                                  ? 'Perfil'
-                                  : 'TESTE',
+                  subtitle: 'Seu assistente visual por voz',
+                  chip: _index == 0
+                      ? 'Início'
+                      : _index == 1
+                          ? 'Descrever'
+                          : _index == 2
+                              ? 'Assistente'
+                              : 'Ajustes',
                 ),
                 Expanded(
                   child: AnimatedSwitcher(
@@ -286,21 +304,17 @@ class _VisionGuideHomeState extends State<VisionGuideHome> {
             NavigationDestination(
               icon: Icon(Icons.center_focus_strong_outlined),
               selectedIcon: Icon(Icons.center_focus_strong_rounded),
-              label: 'Câmera',
+              label: 'Descrever',
             ),
             NavigationDestination(
                 icon: Icon(Icons.chat_bubble_outline),
                 selectedIcon: Icon(Icons.chat_bubble_rounded),
-                label: 'IA'),
+                label: 'Assistente'),
             NavigationDestination(
-              icon: Icon(Icons.photo_library_outlined),
-              selectedIcon: Icon(Icons.photo_library_rounded),
-              label: 'Galeria',
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Ajustes',
             ),
-            NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'Perfil'),
           ],
         ),
       ),
@@ -322,6 +336,18 @@ class _AppHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
       child: Row(
         children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0x1A63A7FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0x3363A7FF)),
+            ),
+            child: const Icon(Icons.remove_red_eye_outlined,
+                color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,12 +370,15 @@ class _AppHeader extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0x1A63A7FF),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0x3363A7FF)),
+          OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Color(0x3363A7FF)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             child: Text(chip),
           ),
@@ -840,6 +869,187 @@ class _ChatTab extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SettingsTab extends StatelessWidget {
+  const _SettingsTab({
+    super.key,
+    required this.sendOnStopTalking,
+    required this.onSendOnStopTalkingChanged,
+    required this.voiceSpeed,
+    required this.onVoiceSpeedChanged,
+    required this.onTestVoice,
+    required this.onLogout,
+  });
+
+  final bool sendOnStopTalking;
+  final ValueChanged<bool> onSendOnStopTalkingChanged;
+  final double voiceSpeed;
+  final ValueChanged<double> onVoiceSpeedChanged;
+  final VoidCallback onTestVoice;
+  final VoidCallback onLogout;
+
+  String get speedLabel {
+    if (voiceSpeed < 0.35) return 'Lenta';
+    if (voiceSpeed < 0.75) return 'Normal';
+    return 'Rápida';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const ValueKey('settings'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: [
+        Text('Ajustes',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        const Text(
+          'Gerencie as preferências de voz e interação do assistente.',
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF111C31), Color(0xFF0E172B)],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('cartões'.toUpperCase(),
+                  style: const TextStyle(
+                      color: Color(0xFF82B1FF),
+                      fontSize: 12,
+                      letterSpacing: 1.2)),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Enviar ao parar de falar',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w700)),
+                        SizedBox(height: 6),
+                        Text(
+                          'No chat, a mensagem de voz é enviada ao finalizar a gravação',
+                          style: TextStyle(color: Color(0xFF9EA9C2)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: sendOnStopTalking,
+                    onChanged: onSendOnStopTalkingChanged,
+                    activeColor: const Color(0xFF63A7FF),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              Text('Velocidade da voz: $speedLabel',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              Slider(
+                value: voiceSpeed,
+                onChanged: onVoiceSpeedChanged,
+                min: 0,
+                max: 1,
+                activeColor: const Color(0xFF63A7FF),
+                inactiveColor: Colors.white12,
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: onTestVoice,
+                icon: const Icon(Icons.volume_up_rounded),
+                label: const Text('Testar voz'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFF63A7FF)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0x1AFFB43D),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Text(
+                  'Não foi possível ler em voz alta. Verifique o volume do sistema.',
+                  style: TextStyle(color: Color(0xFFFFB43D)),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _StatusInfoRow(
+                icon: Icons.volume_up,
+                label: 'Leitura em voz',
+                value: 'disponível',
+              ),
+              const SizedBox(height: 10),
+              _StatusInfoRow(
+                icon: Icons.mic,
+                label: 'Entrada por voz',
+                value: 'disponível',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: onLogout,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.red,
+            side: const BorderSide(color: Colors.red),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+          child: const Text('Sair da conta'),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusInfoRow extends StatelessWidget {
+  const _StatusInfoRow(
+      {required this.icon, required this.label, required this.value});
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF9EA9C2)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(label,
+              style: const TextStyle(color: Color(0xFF9EA9C2))),
+        ),
+        Text(value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      ],
     );
   }
 }
